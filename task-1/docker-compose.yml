@@ -1,0 +1,55 @@
+# HOW TO run
+#
+# 1) Change the values on SEEDR_* args to your desired dns seed name.
+# 2) execute `docker-compose build`;
+# 3) execute `docker-compose up -d` (to run in background);
+# 4) execute `dig -p 15353 @127.0.0.1 example.dnsseed.localhost`
+# 5) If you want to see dnsseed logs: `cat ./logs/dnsseed.log`
+# 6) To stop `docker-compose down -v` 
+# docker-compose.yml with SSL support
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - --api.dashboard=true
+      - --providers.docker
+      - --entrypoints.web.address=:81
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      - --certificatesresolvers.myresolver.acme.email=qlrd.bitcoin@vinteum.be  # CHANGE-ME
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "81:80"
+      - "443:443"
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - public
+
+  dnsseed:
+    build:
+      context: .
+      args:
+        SEEDER_HOST: "qlrd.bitcoin.vinteum.be"       # CHANGE-ME
+        SEEDER_NAMESERVER: "qlrd.bitcoin.dnsseed.be" # CHANGE-ME
+        SEEDER_MAILBOX: "qlrd.bitcoin@dnsseed.be"    # CHANGE-ME
+        SEEDER_IP: "::"
+        SEEDER_PORT: 15353
+    cap_add:
+      - NET_BIND_SERVICE
+    ports:
+      - "15353:15353/udp"
+    networks:
+      - public
+    volumes:
+      - ./logs:/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dnsseed.rule=Host(`qlrd.bitcoin.dnsseed.be`)"
+      - "traefik.http.routers.dnsseed.entrypoints=websecure"
+      - "traefik.http.routers.dnsseed.tls.certresolver=myresolver"
+
+networks:
+  public:

@@ -1,0 +1,10 @@
+[package]
+name = "bitcoin_client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+byteorder = "1.4"
+hex = "0.4.3"
+rand = "0.8"
+sha2 = "0.10"
