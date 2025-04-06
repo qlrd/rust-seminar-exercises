@@ -21,6 +21,7 @@ pub enum SeminarNodeError {
     SendError(Error),
     TimeError(std::time::SystemTimeError),
     HandshakeError(String),
+    PingPongError(String),
 }
 
 impl std::fmt::Display for SeminarNodeError {
@@ -33,6 +34,7 @@ impl std::fmt::Display for SeminarNodeError {
             SeminarNodeError::SendError(err) => write!(f, "Send error: {}", err),
             SeminarNodeError::TimeError(err) => write!(f, "Time error: {}", err),
             SeminarNodeError::HandshakeError(err) => write!(f, "Handshake error: {}", err),
+            SeminarNodeError::PingPongError(err) => write!(f, "PingPong error: {}", err),
         }
     }
 }
@@ -200,6 +202,32 @@ impl SeminarNode {
         self.send_message(stream, payload)?;
         info!("Sent verack message. Handshake complete.");
 
+        // After bitcoind receive verack from other peer,
+        // it will send to us 3 messages:
+        //
+        // * sendcmpctping
+        // * ping,
+        // * feefilter
+        //
+        // receive them until the last is received
+        // and then you can do whatever you want
+        loop {
+            match self.receive_message(stream)? {
+                (cmd, NetworkMessage::SendCmpct(msg)) => {
+                    info!("Received '{}' message: {:?}", cmd, msg);
+                }
+                (cmd, NetworkMessage::Ping(msg)) => {
+                    info!("Received '{}' message: {:?}", cmd, msg);
+                }
+                (cmd, NetworkMessage::FeeFilter(msg)) => {
+                    info!("Received '{}' message: {:?}", cmd, msg);
+                    break;
+                }
+                (cmd, _) => {
+                    return Err(SeminarNodeError::HandshakeError(cmd));
+                }
+            }
+        }
         Ok(())
     }
 }

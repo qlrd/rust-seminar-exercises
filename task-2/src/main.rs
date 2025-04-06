@@ -20,7 +20,7 @@ fn main() -> Result<(), SeminarNodeError> {
         .init();
 
     // Create a SeminarNode instance
-    let node = SeminarNode::create("<change-me>".to_string(), 8333)?;
+    let node = SeminarNode::create("89.58.60.208".to_string(), 8333)?;
 
     // Connect to the node
     let mut stream = node.connect()?;
