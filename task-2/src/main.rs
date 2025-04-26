@@ -23,7 +23,7 @@ fn main() -> Result<(), SeminarNodeError> {
 
     // Create a SeminarNode instance
     // connecting to an initial node
-    let mut node = SeminarNode::create(ip.to_string(), 8333)?;
+    let mut node = SeminarNode::create(ip.to_string(), 8333, 8u16, false)?;
 
     node.run()
 }

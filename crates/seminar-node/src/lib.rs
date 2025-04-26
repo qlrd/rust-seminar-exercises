@@ -108,7 +108,7 @@ pub struct SeminarNode {
     peers: Arc<Mutex<Vec<Arc<Mutex<TcpStream>>>>>,
 
     /// The maximum number of peers to connect to.
-    max_peers: usize,
+    max_peers: u16,
 }
 
 impl SeminarNode {
@@ -129,15 +129,22 @@ impl SeminarNode {
     /// fn main() -> Result<(), SeminarNodeError> {
     ///     let ip = "123.456.789.0";
     ///     let port = 8333;
-    ///     let mut node = SeminarNode::create(ip.to_string(), 8333)?;
+    ///     let max_peers = 8u16;
+    ///     let relay = false;
+    ///     let mut node = SeminarNode::create(ip.to_string(), 8333, max_peers, relay)?;
     ///     node.run()
     /// }
     /// ```
-    pub fn create(ip: String, port: u16) -> Result<Self, SeminarNodeError> {
+    pub fn create(
+        host: String,
+        port: u16,
+        max_peers: u16,
+        relay: bool,
+    ) -> Result<Self, SeminarNodeError> {
         // Configure connection to localhost and to peer
         let me = Ipv4Addr::new(127u8, 0u8, 0u8, 1u8);
         let localhost = me.to_ipv6_mapped();
-        let socket_ip = Ipv4Addr::from_str(&ip).map_err(SeminarNodeError::MalformedString)?;
+        let socket_ip = Ipv4Addr::from_str(&host).map_err(SeminarNodeError::MalformedString)?;
         let socket_ipv6 = socket_ip.to_ipv6_mapped();
         let socket = SocketAddr::new(IpAddr::V6(socket_ipv6), port);
 
@@ -164,10 +171,10 @@ impl SeminarNode {
             addr_trans,
             network: Network::Bitcoin,
             start_height: 0,
-            relay: false,
+            relay,
             user_agent,
             peers: Arc::new(Mutex::new(vec![])),
-            max_peers: 8,
+            max_peers,
         })
     }
 
@@ -206,7 +213,7 @@ impl SeminarNode {
                 .lock()
                 .map_err(|_| SeminarNodeError::MaxPeersReached)?;
 
-            if peers.len() < self.max_peers {
+            if peers.len() < self.max_peers.into() {
                 peers.push(arc_peer.clone());
             } else {
                 return Err(SeminarNodeError::MaxPeersReached);

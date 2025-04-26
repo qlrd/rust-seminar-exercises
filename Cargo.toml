@@ -1,2 +1,2 @@
 [workspace]
-members = ["crates/seminar-node", "task-2"]
+members = ["crates/seminar-node", "crates/seminard", "task-2", "task-3"]

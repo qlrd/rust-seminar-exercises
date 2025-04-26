@@ -16,3 +16,14 @@ docker-composer -f task-1/docker-compose.yml up --build
 ```
 RUST_LOG=<debug|warn|info> cargo run --release --bin task-2
 ```
+
+## Task 3
+
+```
+cargo run --release --bin task-3 -- --host <host> --port <port> --max-peers <max-peers> --log-level <info|warn|debug|error>
+```
+
+Additionally you can add the options:
+
+- `--port` to specify the port to listen on (default: 8333).
+- `--relay` to enable the relay mode.
