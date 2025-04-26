@@ -14,19 +14,16 @@ use seminar_node::SeminarNodeError;
 ///  * To start receiving addresses of other nodes, send a getaddr message. You should receive addr messages from time to time.
 ///  * Print sent and received messages to the terminal using println!() (we are upgrading this later). Ignore received inv messages.`
 fn main() -> Result<(), SeminarNodeError> {
+    let ip = "<change-me>";
+
     // Initialize the logger
     env_logger::Builder::from_default_env()
         .format_timestamp_secs()
         .init();
 
     // Create a SeminarNode instance
-    let node = SeminarNode::create("89.58.60.208".to_string(), 8333)?;
+    // connecting to an initial node
+    let mut node = SeminarNode::create(ip.to_string(), 8333)?;
 
-    // Connect to the node
-    let mut stream = node.connect()?;
-
-    // Make the handshake
-    node.handshake(&mut stream)?;
-
-    Ok(())
+    node.run()
 }
