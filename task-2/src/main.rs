@@ -1,5 +1,5 @@
-use seminar_node::SeminarNode;
-use seminar_node::SeminarNodeError;
+use seminar_node::error::SeminarNodeError;
+use seminar_node::node::SeminarNode;
 
 /// Write a Bitcoin client that connects to a public node using TCP.
 ///
@@ -21,9 +21,12 @@ fn main() -> Result<(), SeminarNodeError> {
         .format_timestamp_secs()
         .init();
 
+    let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let path = format!("{home_dir}/.seminar_node");
+
     // Create a SeminarNode instance
     // connecting to an initial node
-    let mut node = SeminarNode::create(ip.to_string(), 8333, 8u16, false)?;
+    let mut node = SeminarNode::create(ip.to_string(), 8333, 8u32, false, path)?;
 
     node.run()
 }

@@ -1,7 +1,8 @@
 use clap::{ArgAction, Parser};
 use env_logger::Builder;
 use log::LevelFilter;
-use seminar_node::{SeminarNode, SeminarNodeError};
+use seminar_node::error::SeminarNodeError;
+use seminar_node::node::SeminarNode;
 
 #[derive(Parser, Debug)]
 #[command(author = "qlrd")]
@@ -18,7 +19,7 @@ pub struct SeminarNodeDaemon {
 
     /// Maximum number of connections (default: 8)
     #[arg(short, long, value_name = "MAX_PEERS")]
-    pub max_peers: Option<u16>,
+    pub max_peers: Option<u32>,
 
     /// Define if is a relay node (default is false)
     #[arg(short, long, action = ArgAction::SetFalse)]
@@ -27,6 +28,10 @@ pub struct SeminarNodeDaemon {
     /// Log level
     #[arg(short, long, value_name = "LOG_LEVEL")]
     pub log_level: Option<String>,
+
+    #[arg(short, long, value_name = "DB_PATH")]
+    /// Path to the database file
+    pub db_path: Option<String>,
 }
 
 impl SeminarNodeDaemon {
@@ -35,8 +40,12 @@ impl SeminarNodeDaemon {
         let args = SeminarNodeDaemon::parse();
         let host = args.host;
         let port = args.port.unwrap_or(8333);
-        let max_peers = args.max_peers.unwrap_or(8u16);
+        let max_peers = args.max_peers.unwrap_or(8u32);
         let relay = args.relay.unwrap_or(false);
+        let db_path = args.db_path.unwrap_or_else(|| {
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            format!("{home_dir}/.seminar_node")
+        });
 
         // Initialize the logger
         Builder::from_default_env()
@@ -59,7 +68,7 @@ impl SeminarNodeDaemon {
 
         // Create a SeminarNode instance
         // connecting to an initial node
-        let mut node = SeminarNode::create(host, port, max_peers, relay)?;
+        let mut node = SeminarNode::create(host, port, max_peers, relay, db_path)?;
         node.run()
     }
 }
