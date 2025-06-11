@@ -1,13 +1,14 @@
+use crate::error::SeminarNodeError;
+use log::{debug, info, warn};
 use rusqlite;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
-use crate::error::SeminarNodeError;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PeerStatus {
     Awaiting,
+    Reachable,
     Active,
     Deactivated,
     Unreachable,
@@ -18,6 +19,7 @@ impl std::fmt::Display for PeerStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             PeerStatus::Awaiting => write!(f, "awaiting"),
+            PeerStatus::Reachable => write!(f, "reachable"),
             PeerStatus::Active => write!(f, "active"),
             PeerStatus::Deactivated => write!(f, "deactivated"),
             PeerStatus::Unreachable => write!(f, "unreachable"),
@@ -117,6 +119,7 @@ impl Peer {
             })
             .map_err(SeminarNodeError::SelectPeerError)?;
 
+        debug!("Created peer: {peer:?} ");
         Ok(peer.id)
     }
 
@@ -141,6 +144,8 @@ impl Peer {
                 })
             },
         )?;
+
+        debug!("Read peer: {peer:?} ");
         Ok(peer)
     }
 
@@ -174,11 +179,12 @@ impl Peer {
     ) -> Result<(), rusqlite::Error> {
         let path = db_path.as_ref().join("peers.db");
         let conn = rusqlite::Connection::open(path)?;
-        conn.execute(
+        let peer = conn.execute(
             "UPDATE peers SET status = ?1 WHERE ip = ?2 AND port = ?3",
             rusqlite::params![status.to_string(), ip, port],
         )?;
 
+        debug!("Updated peer: id: {peer:?}, ip: {ip}, port: {port}, status: {status}");
         Ok(())
     }
 
@@ -189,6 +195,8 @@ impl Peer {
         let path = db_path.as_ref().join("peers.db");
         let conn = rusqlite::Connection::open(path)?;
         conn.execute("DELETE FROM peers WHERE id = ?1", rusqlite::params![id])?;
+
+        debug!("Deleted peer with id: {id}");
         Ok(())
     }
 
@@ -197,5 +205,30 @@ impl Peer {
         let conn = rusqlite::Connection::open(path)?;
         let count: u32 = conn.query_row("SELECT COUNT(*) FROM peers", [], |row| row.get(0))?;
         Ok(count)
+    }
+
+    pub fn get_all_peers<T: AsRef<Path>>(db_path: T) -> Result<Vec<Peer>, rusqlite::Error> {
+        let path = db_path.as_ref().join("peers.db");
+        let conn = rusqlite::Connection::open(path)?;
+        let mut stmt = conn.prepare("SELECT id, ip, port, status FROM peers")?;
+
+        let peer_iter = stmt.query_map([], |row| {
+            Ok(Peer {
+                id: row.get(0)?,
+                ip: row.get(1)?,
+                port: row.get(2)?,
+                status: row.get::<_, String>(3).and_then(|s| {
+                    PeerStatus::from_str(&s).map_err(|_| rusqlite::Error::InvalidQuery)
+                })?,
+            })
+        })?;
+
+        let mut peers = Vec::new();
+        for peer in peer_iter {
+            peers.push(peer?);
+        }
+
+        debug!("Got {} peers from database", peers.len());
+        Ok(peers)
     }
 }

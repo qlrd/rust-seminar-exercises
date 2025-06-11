@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-seminard = { path = "../crates/seminard" }
+seminar-node = { path = "../crates/seminar-node" }
+tokio = "1.45.1"
