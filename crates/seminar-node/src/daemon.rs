@@ -1,14 +1,14 @@
+use crate::error::SeminarNodeError;
+use crate::node::SeminarNode;
 use clap::{ArgAction, Parser};
 use env_logger::Builder;
 use log::LevelFilter;
-use seminar_node::error::SeminarNodeError;
-use seminar_node::node::SeminarNode;
 
 #[derive(Parser, Debug)]
 #[command(author = "qlrd")]
 #[command(name = "seminard")]
 #[command(about = "A command line interface for rust-seminar node daemon")]
-pub struct SeminarNodeDaemon {
+pub struct Daemon {
     /// The ip address of the seminar node to connect to
     #[arg(short, long, value_name = "IP")]
     pub host: String,
@@ -34,10 +34,10 @@ pub struct SeminarNodeDaemon {
     pub db_path: Option<String>,
 }
 
-impl SeminarNodeDaemon {
+impl Daemon {
     pub async fn run() -> Result<(), SeminarNodeError> {
         // Parse the command line arguments
-        let args = SeminarNodeDaemon::parse();
+        let args = Daemon::parse();
         let host = args.host;
         let port = args.port.unwrap_or(8333);
         let max_peers = args.max_peers.unwrap_or(8u32);
@@ -66,8 +66,7 @@ impl SeminarNodeDaemon {
             })
             .init();
 
-        // Create a SeminarNode instance
-        // connecting to an initial node
+        // Create a SeminarNode instance connecting to an initial node
         let mut node = SeminarNode::create(host, port, max_peers, relay, db_path)?;
         node.run().await
     }

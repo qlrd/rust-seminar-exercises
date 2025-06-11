@@ -1,44 +1,65 @@
 use rusqlite;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SeminarNodeError {
+    #[error("Malformed string: {0}")]
     MalformedString(std::net::AddrParseError),
+    #[error("Connection error: {0}")]
     ConnectionError(std::io::Error),
+    #[error("Encode error: {0}")]
     EncodeError(bitcoin::io::Error),
+    #[error("Decode error: {0}")]
     DecodeError(bitcoin::consensus::encode::Error),
+    #[error("Send error: {0}")]
     SendError(std::io::Error),
+    #[error("Time error: {0}")]
     TimeError(std::time::SystemTimeError),
-    HandshakeError(String),
+    #[error("PingPong error: {0}")]
     PingPongError(String),
+    #[error("Max peers reached")]
     MaxPeersReached,
+    #[error("Lock error: {0}")]
     PeerLockError(String),
-    InsertPeerError(rusqlite::Error),
-    SelectPeerError(rusqlite::Error),
-    NoPeersAvailable,
-    CreateDatabaseError(rusqlite::Error),
-    PeerAlreadyExists(String, u16),
-}
 
-impl std::fmt::Display for SeminarNodeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SeminarNodeError::MalformedString(err) => write!(f, "Malformed string: {err}"),
-            SeminarNodeError::ConnectionError(err) => write!(f, "Connection error: {err}"),
-            SeminarNodeError::EncodeError(err) => write!(f, "Encode error: {err}"),
-            SeminarNodeError::DecodeError(err) => write!(f, "Decode error: {err}"),
-            SeminarNodeError::SendError(err) => write!(f, "Send error: {err}"),
-            SeminarNodeError::TimeError(err) => write!(f, "Time error: {err}"),
-            SeminarNodeError::HandshakeError(err) => write!(f, "Handshake error: {err}"),
-            SeminarNodeError::PingPongError(err) => write!(f, "PingPong error: {err}"),
-            SeminarNodeError::MaxPeersReached => write!(f, "Max peers reached"),
-            SeminarNodeError::PeerLockError(err) => write!(f, "Lock error: {err}"),
-            SeminarNodeError::NoPeersAvailable => write!(f, "No peers available"),
-            SeminarNodeError::InsertPeerError(e) => write!(f, "Insert peer error: {e}"),
-            SeminarNodeError::SelectPeerError(e) => write!(f, "Select peer error: {e}"),
-            SeminarNodeError::CreateDatabaseError(err) => write!(f, "Create database error: {err}"),
-            SeminarNodeError::PeerAlreadyExists(ip, port) => {
-                write!(f, "Peer already exists: {ip}:{port}")
-            }
-        }
-    }
+    #[error("No peers available")]
+    NoPeersAvailable,
+    #[error("Create database error: {0}")]
+    CreateDatabaseError(rusqlite::Error),
+    #[error("Peer already exists: {0}:{1}")]
+    PeerAlreadyExists(String, u16),
+    #[error("Received zero bytes")]
+    ZeroBytesRecvError,
+    #[error("Max timeout reached")]
+    TimeoutError,
+    #[error("Connection closed")]
+    ConnectionClosed,
+    #[error("No peers found")]
+    NoPeersFound,
+
+    // Handshake errors
+    #[error("Failed to handshake: {0}")]
+    HandshakeError(String),
+
+    // Database errors
+    #[error("Open database error: {0}")]
+    OpenDatabaseError(rusqlite::Error),
+
+    #[error("Create peer error: {0}")]
+    CreatePeerError(rusqlite::Error),
+
+    #[error("Read peer error: {0}")]
+    ReadPeerError(rusqlite::Error),
+
+    #[error("Delete peer error: {0}")]
+    DeletePeerError(rusqlite::Error),
+
+    #[error("Update peer error: {0}")]
+    UpdatePeerError(rusqlite::Error),
+
+    #[error("Select peer error: {0}")]
+    SelectPeerError(rusqlite::Error),
+
+    #[error("Incomplete message")]
+    IncompleteMessage,
 }
